@@ -1,0 +1,175 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>G</title>
+	<link rel="stylesheet" href="style.css">
+  
+	<script src="js/socket-io.js"></script>
+	<script src="js/keys.js"></script>
+	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>	
+  
+</head>
+<body onunload="disconnect()">
+	<h1 id="title">Hello Square</h1>
+	<h1 id="test"></h1>
+	<canvas id="field" width="1000" height="1000" ></canvas>
+	
+	<div align="center">
+		<button type="button" id="m1">
+			left click
+		</button>
+		<select name="actions" id='_m1'>
+			<option value="shoot" selected="selected">shoot</option>
+			<option value="explode">explode</option>
+			<option value="portal">portal</option>
+			<option value="hulk">hulk</option>
+			<option value="bounce">bounce</option>
+			<option value="invisible">invisible</option>
+			<option value="freeze">freeze</option>
+			<option value="zombie">zombie</option>
+			<option value="rock">rock</option>
+			<option value="sword">sword</option>
+			<option value="sprint">sprint</option>
+			<option value="beam">beam</option>
+			<option value="gatling">gatling</option>
+			<option value="kamehameha">kamehameha</option>
+		</select>
+	</div>
+	
+	<div align="center">
+		<button type="button" id="m2" class="butt">
+			right click
+		</button>
+		<select name="actions" id='_m2' class="buttt">
+			<option value="shoot" selected="selected">shoot</option>
+			<option value="explode">explode</option>
+			<option value="portal">portal</option>
+			<option value="hulk">hulk</option>
+			<option value="bounce">bounce</option>
+			<option value="invisible">invisible</option>
+			<option value="freeze">freeze</option>
+			<option value="zombie">zombie</option>
+			<option value="rock">rock</option>
+			<option value="sword">sword</option>
+			<option value="sprint">sprint</option>
+			<option value="beam">beam</option>
+			<option value="gatling">gatling</option>
+			<option value="kamehameha">kamehameha</option>
+		</select>	
+	</div>
+	
+	<div align="center">
+		<button type="button" id="space" class="butt">
+			space
+		</button>
+		<select name="actions" id='_space' class="buttt">
+			<option value="shoot" selected="selected">shoot</option>
+			<option value="explode">explode</option>
+			<option value="portal">portal</option>
+			<option value="hulk">hulk</option>
+			<option value="bounce">bounce</option>
+			<option value="invisible">invisible</option>
+			<option value="freeze">freeze</option>
+			<option value="zombie">zombie</option>
+			<option value="rock">rock</option>
+			<option value="sword">sword</option>
+			<option value="sprint">sprint</option>
+			<option value="beam">beam</option>
+			<option value="gatling">gatling</option>
+			<option value="kamehameha">kamehameha</option>
+		</select>	
+	</div>	
+	
+	<script>
+		var canvas = document.getElementById("field")
+		var ctx = canvas.getContext("2d")
+		var person = {}
+		
+		var things = {}
+		
+		var socket = io()
+		socket.on('init', function(person){ person = person })	
+		socket.on('draw', function(things){ //things = _things })
+		//function draw(){
+			//setTimeout(function(){
+				//requestAnimationFrame(draw)	
+				ctx.clearRect(0, 0, 1000, 1000)
+				for(var x in things){	
+					size = things[x].size
+					_size = things[x].size/2
+					ctx.fillStyle = things[x].color
+					ctx.fillRect(things[x].x - _size,things[x].y - _size,size,size)		
+					
+					if(things[x].isperson){
+						if(things[x].invisible){ 
+							console.log('test')
+							continue }
+						__size = _size/2
+						if(things[x].energy > 6){
+							ctx.fillStyle="#00FF00"
+							ctx.fillRect(things[x].x - __size,things[x].y - __size,_size,_size)
+							continue
+						}
+						if(things[x].energy > 3){
+							ctx.fillStyle="#FFFF00"
+							ctx.fillRect(things[x].x - __size,things[x].y - __size,_size,_size)
+							continue
+						}						
+						if(things[x].energy > 0){
+							ctx.fillStyle="#FF0000"
+							ctx.fillRect(things[x].x - __size,things[x].y - __size,_size,_size)
+							continue
+						}	
+					}
+				}
+			//}, 1000/60)	
+		})
+		//draw()
+		
+		//keys
+		document.addEventListener("keydown", keydown, false)
+		document.addEventListener("keyup", keyup, false)
+		document.addEventListener("keydown", function(){
+			socket.emit('keys', up, down, left, right)
+		}, false)
+		document.addEventListener("keyup", function(){
+			socket.emit('keys', up, down, left, right)
+		}, false)
+		
+		//mouse		
+		var mx = 0
+		var my = 0		
+        document.addEventListener('contextmenu', function(c) { c.preventDefault() }, false)	
+		canvas.addEventListener("mousedown", function(c){
+			coord = [(c.clientX - canvas.offsetLeft), (c.clientY - canvas.offsetTop)]
+			if(c.which == 1){ socket.emit('action', 'left', coord)}
+			if(c.which == 3){ socket.emit('action', 'right', coord)}
+		}, false)
+		canvas.addEventListener('mousemove',function(c){
+			mx = (c.clientX - canvas.offsetLeft)
+			my = (c.clientY - canvas.offsetTop)
+			//socket.emit('mouse', mx, my)
+		},false)
+
+		//buttons
+		var m1butt = document.getElementById('m1')
+		var _m1butt = document.getElementById('_m1')
+		m1butt.onclick = function(){
+			socket.emit('change',_m1butt.options[_m1butt.selectedIndex].value,'left')
+		}
+		
+		var m2butt = document.getElementById('m2')
+		var _m2butt = document.getElementById('_m2')
+		m2butt.onclick = function(){
+			socket.emit('change',_m2butt.options[_m2butt.selectedIndex].value,'right')
+		}
+		
+		var space = document.getElementById('space')
+		var _space = document.getElementById('_space')
+		space.onclick = function(){
+			socket.emit('change',_space.options[_space.selectedIndex].value,'space')
+		}			
+	</script>
+
+</body>
+</html>
