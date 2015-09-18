@@ -1,5 +1,16 @@
 //ABDULWAHED WAHEDI
 
+//IDEAS
+
+//objectives
+//mine
+//energy drops
+//spawn invulnerability
+//walls kill
+//force actions
+//nuke
+//reverse black hole (push hole)
+
 {//variables
 var victor = require('victor')
 var app  = require("express")()
@@ -161,36 +172,36 @@ function colliding(thing){
 	return false
 }
 function spawn(thing){
+	if(typeof(thing) == 'undefined'){ console.log('?') }
 	do{
-		thing.x = Math.round(Math.random()*(width-20)) + 10
-		thing.y = Math.round(Math.random()*(height-20)) + 10
-		things_draw[thing.id].x = thing.x
-		things_draw[thing.id].y = thing.y
-		thing._x = thing.x
-		thing._y = thing.x
+		thing._x = Math.round(Math.random()*(width-20)) + 10
+		thing._y = Math.round(Math.random()*(height-20)) + 10
 	}while(colliding_check(thing))
+		
+	thing.x = thing._x
+	thing.y = thing._y
+	things_draw[thing.id].x = thing.x
+	things_draw[thing.id].y = thing.y	
 }
 function person_spawn(person){
 	if(person.isdead == 'false'){ return }
 	spawn(person)
-	person.color = "#000000"		
+	things_draw[person.id].color = "#000000"		
 	person.health = 10
+	person.energy = 10
 	person.speed = 1
-	person.size = 10
 	person.isdead = false
 	delete things_draw[person.id + '-tombstone']
 }
 function gameover(person){
-	person.isdead = true
-	person.size = 0		
-	things_draw[person.id].size = 0
+	person.isdead = true	
 	
-	if(person.hasrock){
-		person.rock.end()
-	}
-	if(person.hassword){
-		person.sword.end()
-	}
+	// if(person.hasrock){
+		// person.rock.end()
+	// }
+	// if(person.hassword){
+		// person.sword.end()
+	// }
 	
 	var name = person.id + '-tombstone'
 	things_draw[name] = {}
@@ -202,14 +213,10 @@ function gameover(person){
 	
 	person.x = -100
 	person.y = -100
-	things_draw[person.id].x = -100
-	things_draw[person.id].y = -100
+	// things_draw[person.id].x = -100
+	// things_draw[person.id].y = -100
 	
-	setTimeout(function(){ if(person.isdead){ 
-		person.size = 10		
-		things_draw[person.id].size = 10
-		person_spawn(person) 
-	}} ,10000)	
+	setTimeout(function(){ person_spawn(person) } ,10000)	
 }
 var update_interval = setInterval(function(){ for(var x in things){ things[x].step() } }, 8)
 var draw_interval = setInterval(function(){ io.sockets.emit('draw', things_draw) }, 16)
@@ -947,7 +954,7 @@ actions = {
 			player.speed = 3
 			player.size = 80
 			player.color = "#04B404"
-			player.health = 10000
+			player.health = 300
 			player.collide = function(thing){
 				if(thing.isperson){ gameover(thing) }
 				if(thing.iszombie){ 
@@ -1069,7 +1076,7 @@ actions = {
 					return
 				}
 				if(thing.isperson){
-					thing.health -= 2
+					thing.health -= 3
 					if(thing.health <= 0){ gameover(thing) }	
 					delete things_draw[this.id]
 					delete things[this.id]
@@ -1283,10 +1290,9 @@ io.on('connection', function(client){
 		if(people[client.id].hassword){
 			people[client.id].sword.end()
 		}
-		delete(people[client.id])
+		delete people[client.id]
 		delete things_draw[client.id]
 		delete things[client.id]
-		delete people[client.id]
 	})
 	
 	client.on('keys', function(up, down, left, right){
