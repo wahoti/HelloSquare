@@ -24,6 +24,19 @@ var things_count = 0
 var reverse = new victor(-1,-1)	
 var width = 1000
 var height = 1000
+
+var boxs = {}
+boxs['box1'] = {}
+boxs['box1'].size = 250
+boxs['box1'].x = 500
+boxs['box1'].y = 500
+
+things_draw['box1'] = {}
+things_draw['box1'].x = 500
+things_draw['box1'].y = 500
+things_draw['box1'].size = 250
+things_draw['box1'].color = '#000000'
+
 	
 app.set('port', process.env.PORT || 3000)
 app.get('/', function(req, res){ res.sendFile(__dirname + '/index.html') })
@@ -136,6 +149,7 @@ function spawn_zombie(location){
 function colliding_check(thing){
 	//NOTE this works only for squares
 	_size = thing.size / 2
+	this_size = thing.size / 2
 	for(var x in things){
 		if(things[x] == thing){ continue }
 		_size = things[x].size / 2
@@ -144,11 +158,21 @@ function colliding_check(thing){
 			return true
 		}
 	}
+	
+	for(var box in boxs){
+		that_size = boxs[box].size / 2
+		if((thing._x+this_size) >= (boxs[box].x-that_size)&&(thing._x-this_size) <= (boxs[box].x+that_size) &&
+		   (thing._y+this_size) >= (boxs[box].y-that_size)&&(thing._y-this_size) <= (boxs[box].y+that_size)){ 
+			return true
+		}		
+	}	
+	
 	return false
 }
 function colliding(thing){
 	//NOTE this works only for squares
 	this_size = thing.size / 2
+	
 	if(thing._x < this_size || thing._x > (width-this_size) || thing._y < this_size || thing._y > (height-this_size)){
 		if(thing.isperson){ return true }
 		if(thing.destroy_on_wall){
@@ -158,6 +182,21 @@ function colliding(thing){
 		if(thing.trigger_on_wall){
 			thing.wall_collision()
 		}
+	}
+	
+	for(var box in boxs){
+		that_size = boxs[box].size / 2
+		if((thing._x+this_size) >= (boxs[box].x-that_size)&&(thing._x-this_size) <= (boxs[box].x+that_size) &&
+		   (thing._y+this_size) >= (boxs[box].y-that_size)&&(thing._y-this_size) <= (boxs[box].y+that_size)){ 
+			if(thing.isperson){ return true }
+			if(thing.destroy_on_wall){
+				thing.end()
+				return true
+			}
+			if(thing.trigger_on_wall){
+				thing.wall_collision()
+			}				
+		}		
 	}
 	
 	for(var x in things){
