@@ -1,8 +1,10 @@
 //ABDULWAHED WAHEDI
 
 //IDEAS
-
-//objectives
+//mines, walls, turrets, blink, energy boost ability, shield boost, hulk abilities, shotgun, bouncey gun, grenade, c4
+//display health? - outer ring?
+//secondary cooldown for strong abilities (energy boost/hulk)
+	//when at 0 can use special abilities - special ability increase counter - counter goes down to zero
 //mine
 //energy drops
 //spawn invulnerability
@@ -10,6 +12,14 @@
 //force actions
 //nuke
 //reverse black hole (push hole)
+
+//changes made
+//added hit function - simplified damage to zombies/humans
+//shoot bigger
+//rock faster
+//implemented logic for a 1 hit only for explode, freeze, shoot
+	//-beam/kameheha (those are 1 hit anyway?)
+
 
 {//variables
 var victor = require('victor')
@@ -48,6 +58,14 @@ http.listen(app.get('port'), function(){ console.log('listening on ' + app.get('
 }
 
 {//functions
+function hit(thing, damage){
+	thing.health -= damage
+	if(thing.health <= 0){
+		thing.end()
+		return	
+	}	
+}
+
 function game_over_zombie(zombie){
 	var name = zombie.id + '-tombstone'
 	things_draw[name] = {}
@@ -222,7 +240,8 @@ function spawn(thing){
 	things_draw[thing.id].x = thing.x
 	things_draw[thing.id].y = thing.y	
 }
-function person_spawn(person){
+function person_spawn(person_id){
+	var person = things[person_id]
 	if(person.isdead == 'false'){ return }
 	spawn(person)
 	things_draw[person.id].color = "#000000"		
@@ -233,11 +252,12 @@ function person_spawn(person){
 	delete things_draw[person.id + '-tombstone']
 }
 function gameover(person){
+	console.log('!')
 	person.isdead = true	
 	
-	// if(person.hasrock){
-		// person.rock.end()
-	// }
+	if(person.hasrock){
+		person.rock.end()
+	}
 	// if(person.hassword){
 		// person.sword.end()
 	// }
@@ -256,6 +276,7 @@ function gameover(person){
 	// things_draw[person.id].y = -100
 	
 	setTimeout(function(){ person_spawn(person) } ,10000)	
+	
 }
 var update_interval = setInterval(function(){ for(var x in things){ things[x].step() } }, 8)
 var draw_interval = setInterval(function(){ io.sockets.emit('draw', things_draw) }, 16)
@@ -272,6 +293,7 @@ actions = {
 			things_draw[name] = {}
 			things[name].id = name
 			things[name].speed = 30
+			things[name].damage = 20
 			things[name].name = 'kamehameha'
 			things_draw[name].color = "#3399FF"
 			things[name].size = 0
@@ -295,28 +317,13 @@ actions = {
 			}
 			
 			things[name].collide = function(thing){
-				if(thing.name == "portal"){
-					return
-				}
-				if(thing.name == "bounce"){
-					return
-				}
-				if(thing.isperson){
-					thing.health -= 10
-					if(thing.health <= 0){ gameover(thing) }	
-					this.end()
-					return				
-				}
-				if(thing.iszombie){
-					thing.health -= 50
-					if(thing.health <= 0){
-						thing.end()
-						return	
-					}
+				if(thing.block){
 					this.end()
 					return
-				}
-				return
+				}				
+				if(thing.isperson || thing.iszombie){
+					hit(thing, things[name].damage)
+				}				
 			}
 			
 			things[name].counter = 0
@@ -362,6 +369,7 @@ actions = {
 				things_draw[name].color = '#FF00FF'
 				things[name].size = 10
 				things_draw[name].size = 10
+				things[name].damage = 3
 				things[name].isperson = false
 				things_draw[name].isperson = false
 				var direction = new victor(coord[0] - player.x, coord[1] - player.y)
@@ -379,33 +387,12 @@ actions = {
 				
 				things[name].collide = function(thing){
 					if(thing.block){
-						delete things_draw[this.id]
-						delete things[this.id]
-						delete this
-					}
-					if(thing.name == "bounce"){
+						this.end()
 						return
-					}
-					if(thing.isperson){
-						thing.health -= 5
-						if(thing.health <= 0){ gameover(thing) }	
-						delete things_draw[this.id]
-						delete things[this.id]
-						delete this
-						return				
-					}
-					if(thing.iszombie){
-						thing.health -= 25
-						if(thing.health <= 0){
-							delete things_draw[thing.id]
-							delete things[thing.id]
-							delete thing
-							return	
-						}
-						delete things_draw[this.id]
-						delete things[this.id]
-						delete this
-					}
+					}				
+					if(thing.isperson || thing.iszombie){
+						hit(thing, things[name].damage)
+					}	
 					return
 				}	
 				
@@ -458,6 +445,7 @@ actions = {
 				things_draw[name].color = "#666611"
 				things[name].size = 10
 				things_draw[name].size = 10
+				things[name].damage = 4
 				things[name].isperson = false
 				things_draw[name].isperson = false
 				var direction = new victor(coord[0] - player.x, coord[1] - player.y)
@@ -475,33 +463,13 @@ actions = {
 				
 				things[name].collide = function(thing){
 					if(thing.block){
-						delete things_draw[this.id]
-						delete things[this.id]
-						delete this
-					}
-					if(thing.name == "bounce"){
+						this.end()
 						return
+					}				
+					if(thing.isperson || thing.iszombie){
+						hit(thing, things[name].damage)
 					}
-					if(thing.isperson){
-						thing.health -= 5
-						if(thing.health <= 0){ gameover(thing) }	
-						delete things_draw[this.id]
-						delete things[this.id]
-						delete this
-						return				
-					}
-					if(thing.iszombie){
-						thing.health -= 20
-						if(thing.health <= 0){
-							delete things_draw[thing.id]
-							delete things[thing.id]
-							delete thing
-							return	
-						}
-						delete things_draw[this.id]
-						delete things[this.id]
-						delete this
-					}
+					things[name].end()					
 					return
 				}	
 				
@@ -518,8 +486,6 @@ actions = {
 			
 			
 			},100)	
-
-			//setTimeout(function(){clearInterval(beam_interval)}, 500)
 		}
 	},	
 	sprint: object = {
@@ -647,26 +613,12 @@ actions = {
 			
 			things[name].collide = function(thing){
 				if(thing.name == "portal"){
-					this.owner.hassword = false
 					this.end()
 					return
 				}
-				if(thing.name == "bounce"){
-					return
-				}
-				if(thing.isperson){
-					thing.health -= 10
-					if(thing.health <= 0){ gameover(thing) }	
-					return				
-				}
-				if(thing.iszombie){
-					thing.health -= 10
-					if(thing.health <= 0){
-						thing.end
-					}
-					this.end()
-					return
-				}
+				if(thing.isperson || thing.iszombie){
+					hit(thing, things[name].damage)
+				}	
 				return
 			}
 
@@ -710,11 +662,12 @@ actions = {
 			things[name] = {}
 			things_draw[name] = {}
 			things[name].id = name
-			things[name].speed = 2
+			things[name].speed = 3
 			things[name].name = 'rock'
 			things_draw[name].color = "#777777"
 			things[name].size = 70
 			things_draw[name].size = 70
+			things[name].damage = 20
 			things[name].isperson = false
 			things_draw[name].isperson = false
 			things[name].iszombie = false
@@ -745,26 +698,13 @@ actions = {
 					this.thrown = true
 					return
 				}
-				if(thing.name == "bounce"){
-					return
-				}
-				if(thing.isperson){
-					thing.health -= 50
-					if(thing.health <= 0){ gameover(thing) }	
-					this.end()
-					return				
-				}
-				if(thing.iszombie){
-					thing.health -= 50
-					if(thing.health <= 0){
-						delete things_draw[thing.id]
-						delete things[thing.id]
-						delete thing
-						return	
-					}
+				if(thing.block && this.thrown == true){
 					this.end()
 					return
-				}
+				}				
+				if(thing.isperson || thing.iszombie){
+					hit(thing, things[name].damage)
+				}	
 				return
 			}
 
@@ -798,7 +738,7 @@ actions = {
 			things[name].isperson = false
 			things_draw[name].isperson = false
 			things[name].iszombie = true
-			things[name].health = 100
+			things[name].health = 20
 			var direction = new victor(coord[0] - player.x, coord[1] - player.y)
 			direction.normalize()
 			things[name].direction = direction
@@ -879,6 +819,7 @@ actions = {
 			things[name].x = player.x + (80*direction.x)
 			things[name].y = player.y + (80*direction.y)
 			things[name].destroy_on_wall = true
+			things[name].collisions = []
 			
 			things[name].end = function(){
 				delete things_draw[this.id]
@@ -887,9 +828,10 @@ actions = {
 			}			
 			
 			things[name].collide = function(thing){
-				if(thing.name == "bounce"){
-					return
-				}
+				
+				if(thing.name == "bounce"){ return }
+				if(things[name].collisions.indexOf(thing.id) > -1){ return }
+				
 				var hold = things_draw[thing.id].color
 				thing.speed = 0
 				things_draw[thing.id].color = "#00EEEE"
@@ -898,6 +840,7 @@ actions = {
 					if(!things_draw[thing.id]){return}
 					things_draw[thing.id].color = hold	
 				}, 6000)
+				things[name].collisions.push(thing.id)
 				return				
 			}	
 			
@@ -1090,8 +1033,9 @@ actions = {
 			things[name].speed = 6
 			things[name].name = 'shoot'
 			things_draw[name].color = "#FF0000"
-			things[name].size = 8
-			things_draw[name].size = 8
+			things[name].size = 16
+			things[name].damage = 3
+			things_draw[name].size = things[name].size
 			var direction = new victor(coord[0] - player.x, coord[1] - player.y)
 			direction.normalize()
 			things[name].direction = direction
@@ -1102,38 +1046,16 @@ actions = {
 			things[name].end = function(){
 				delete things_draw[this.id]
 				delete things[this.id]
-				delete this
+				//delete this
 			}			
 			
 			things[name].collide = function(thing){
 				if(thing.block){
-					delete things_draw[this.id]
-					delete things[this.id]
-					delete this
-				}
-				if(thing.name == "bounce"){
+					things[name].end()
 					return
 				}
-				if(thing.isperson){
-					thing.health -= 3
-					if(thing.health <= 0){ gameover(thing) }	
-					delete things_draw[this.id]
-					delete things[this.id]
-					delete this
-					return				
-				}
-				if(thing.iszombie){
-					thing.health -= 10
-					if(thing.health <= 0){
-						delete things_draw[thing.id]
-						delete things[thing.id]
-						delete thing
-						return	
-					}
-					delete things_draw[this.id]
-					delete things[this.id]
-					delete this
-				}
+				if(thing.isperson || thing.iszombie){ hit(thing, things[name].damage) }	
+				things[name].end()
 				return
 			}	
 			
@@ -1162,6 +1084,7 @@ actions = {
 			things_draw[name].color = "#FFAA00"
 			things[name].size = 20
 			things_draw[name].size = 20
+			things[name].damage = 20
 			things[name].isperson = false
 			things_draw[name].isperson = false
 			var direction = new victor(coord[0] - player.x, coord[1] - player.y)
@@ -1173,6 +1096,7 @@ actions = {
 			things[name].trigger_on_wall = true
 			things[name].hit = false
 			things[name].hit_timer = 0
+			things[name].collisions = []			
 			
 			things[name].end = function(){
 				delete things_draw[this.id]
@@ -1185,25 +1109,13 @@ actions = {
 			}
 			
 			things[name].collide = function(thing){	
-				if(thing.name == "bounce"){ return }			
+				if(thing.name == "bounce"){ return }	
+				if(things[name].collisions.indexOf(thing.id) > -1){ return }				
 				this.hit = true
-				if(thing.isperson){
-					thing.health -= 10
-					if(thing.health <= 0){ gameover(thing) }	
-					return				
-				}
-				if(thing.iszombie){
-					thing.health -= 1
-					if(thing.health <= 0){
-						delete things_draw[thing.id]
-						delete things[thing.id]
-						delete thing
-						delete things_draw[this.id]
-						delete things[this.id]
-						delete this
-						return	
-					}
-				}
+				if(thing.isperson || thing.iszombie){
+					hit(thing, things[name].damage)
+				}	
+				things[name].collisions.push(thing.id)
 				return
 			}	
 			
@@ -1255,6 +1167,26 @@ io.on('connection', function(client){
 	P.m2 = actions['shoot']
 	P.space = actions['shoot']
 	P.collide = function(thing){  }
+	
+	P.end = function(){
+		var hold_id = this.id
+		this.isdead = true	
+		
+		if(this.hasrock){ this.rock.end() }
+		
+		var name = this.id + '-tombstone'
+		things_draw[name] = {}
+		things_draw[name].isperson = false	
+		things_draw[name].size = 10
+		things_draw[name].x = this.x
+		things_draw[name].y = this.y
+		things_draw[name].color = "#AAAAAA"
+		
+		this.x = -100
+		this.y = -100
+		
+		setTimeout(function(){ person_spawn(hold_id) } ,10000)		
+	}
 	
 	P.step = function(){
 		things_draw[this.id].x = this.x
@@ -1364,7 +1296,7 @@ io.on('connection', function(client){
 	})		
 	
 	client.on('respawn',function(){ 
-		person_spawn(P)
+		//person_spawn(P)
 	})
 	
 	client.on('change',function(action, key){
