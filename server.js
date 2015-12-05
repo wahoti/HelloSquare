@@ -29,6 +29,62 @@
 //balancing changes - zombies cheaper but lower health - abilities will more consistently do dmg to them.
 //added nuke
 
+//ideas 11/28/15
+//different melee weapons
+	//sword = lance - vanilla
+	//deflects swings shorter range
+	//spear - faster than rock
+	//axe/punch starts small in front of u and gets bigger as it moves forward
+		//
+//boomerang
+//different mobility abilities
+	//sprint vanilla
+	//rocket boots - even faster shorter duration higher stamina cost, 
+	//blink - directed teleport (where u are pointing 10 square lengths in direction)
+	//non lethal black hole? (projectile version?)
+//blizzard - creates area effect slow with random dmg inside	
+//mana leak
+	//emp - (burst around player that saps all energy)
+//fire - lasting area of effect dmg
+	//flamethrower - sword + gatling + fire
+	//fire boots - leaves fire trail
+	//meteor?
+	//onfire attributes
+		//pulsating red around player
+//current mouse position attribute on player
+	//guided missle
+	//draw fire
+//teams?? - set team on page
+	//team abilities
+		//buffs
+//super lazer
+	//large wind up time
+	//aim by moving
+	//full range of screen
+	//appears on all ranges instantly
+	//cool animation
+		//squares being absorbed into player
+		//being slowly appears but doesn't do damage
+		//suddenly gets bigger and changes color
+//bubble
+	//takes one damage then pops
+	//sets energy to 0 or 1 for balance
+//hole terrain
+	//can shoot through but not walk through
+	//creates a big hole wall in front of you
+//burst
+	//shotgun
+	//burst 
+//add game direction
+	//powerups
+	//will make more sense of positional 
+	
+//12/15/15 CHANGES
+//revamped weapon system to make creating new weapons smarter
+//can make all changes inside action object
+//added player.weapons object
+//id of weapon is player.weapons('WEAPON_NAME')
+
 {//variables
 var victor = require('victor')
 var app  = require("express")()
@@ -48,6 +104,7 @@ boxs['box1'] = {}
 boxs['box1'].size = 250
 boxs['box1'].x = 500
 boxs['box1'].y = 500
+boxs['box1'].ishole = false
 
 things_draw['box1'] = {}
 things_draw['box1'].x = 500
@@ -66,6 +123,20 @@ http.listen(app.get('port'), function(){ console.log('listening on ' + app.get('
 }
 
 {//functions
+function move_weapons(person){
+	for(var x in person.weapons){
+		if(person.weapons[x]){
+			person.weapons[x].move(person)
+		}
+	}
+}
+function update_weapons(person){
+	for(var x in person.weapons){
+		if(person.weapons[x]){	
+			person.weapons[x].update(person)
+		}
+	}
+}
 function hit(thing, damage){
 	//console.log('hit')
 	thing.health -= damage
@@ -121,7 +192,7 @@ function spawn_zombie(location){
 	
 	things[name].collide = function(thing){
 		if(thing.isperson){
-			gameover(thing)
+			thing.end()
 			var allplayersdead = true
 			for(var x in people){
 				if(!people[x].isdead){
@@ -177,8 +248,8 @@ function colliding_check(thing){
 	_size = thing.size / 2
 	this_size = thing.size / 2
 	for(var x in things){
-		if(things[x] == thing){ continue }
-		_size = things[x].size / 2
+		if(things[x] == thing){ continue }//don't block yourself
+		_size = things[x].size / 2//size is radius
 		if((thing._x+_size) >= (things[x].x-_size)&&(thing._x-_size) <= (things[x].x+_size) &&
 		   (thing._y+_size) >= (things[x].y-_size)&&(thing._y-_size) <= (things[x].y+_size)){ 
 			return true
@@ -215,7 +286,7 @@ function colliding(thing){
 		if((thing._x+this_size) >= (boxs[box].x-that_size)&&(thing._x-this_size) <= (boxs[box].x+that_size) &&
 		   (thing._y+this_size) >= (boxs[box].y-that_size)&&(thing._y-this_size) <= (boxs[box].y+that_size)){ 
 			if(thing.isperson || thing.iszombie){ return true }
-			if(thing.destroy_on_wall){
+			if(thing.destroy_on_wall && !boxs[box].ishole){
 				thing.end()
 				return true
 			}
@@ -259,37 +330,10 @@ function person_spawn(person_id){
 	person.isdead = false
 	delete things_draw[person.id + '-tombstone']
 }
-function gameover(person){
-	console.log('!')
-	person.isdead = true	
-	
-	if(person.hasrock){
-		person.rock.end()
-	}
-	// if(person.hassword){
-		// person.sword.end()
-	// }
-	
-	var name = person.id + '-tombstone'
-	things_draw[name] = {}
-	things_draw[name].isperson = false	
-	things_draw[name].size = 10
-	things_draw[name].x = person.x
-	things_draw[name].y = person.y
-	things_draw[name].color = "#AAAAAA"
-	
-	person.x = -100
-	person.y = -100
-	// things_draw[person.id].x = -100
-	// things_draw[person.id].y = -100
-	
-	setTimeout(function(){ person_spawn(person) } ,10000)	
-	
 }
 var update_interval = setInterval(function(){ for(var x in things){ things[x].step() } }, 8)
 var draw_interval = setInterval(function(){ io.sockets.emit('draw', things_draw) }, 16)
-var energy_interval = setInterval(function(){ for(var x in people){ if(people[x].energy < 10){ people[x].energy++ } } }, 1000)
-}
+var energy_interval = setInterval(function(){ for(var x in people){ if(people[x].energy < 10){ people[x].energy++ } } }, 1000) 
 
 actions = {
 	kamehameha: object = {
@@ -511,8 +555,7 @@ actions = {
 	sword: object = {
 		cost: 2,
 		go: function(player, coord){	
-			if(player.hassword){ player.sword.end() }
-			player.hassword = true
+			if(player.weapons['sword']){ player.weapons['sword'].end() }
 			var name = player.id + '-' + things_count
 			things_count++
 			things[name] = {}
@@ -582,12 +625,38 @@ actions = {
 				things[name].sections[_name] = things[_name]
 			}
 			
-			player.sword = things[name]
+			player.weapons['sword'] = things[name]
 			things[name].owner = player
 			
+			things[name].update = function(person){
+				things_draw[person.weapons['sword'].id].x = person.weapons['sword'].x
+				things_draw[person.weapons['sword'].id].y = person.weapons['sword'].y			
+				person.weapons['sword']._x = person.weapons['sword'].x
+				person.weapons['sword']._y = person.weapons['sword'].y
+				if(person.up){ person.weapons['sword']._y -= person.speed }
+				else if(person.down){ person.weapons['sword']._y += person.speed }
+				if(person.left){ person.weapons['sword']._x -= person.speed }
+				else if(person.right){ person.weapons['sword']._x += person.speed }
+				person.weapons['sword']._colliding()				
+			}
+			
+			things[name].move = function(person){
+				this.x = this._x
+				this.y = this._y
+				var offset = 0
+				for(var x in this.sections){
+					offset += this.size
+					this.sections[x].x = this._x + (offset*this.direction.x)
+					this.sections[x].y = this._y + (offset*this.direction.y)
+					this.sections[x]._x = this.sections[x].x
+					this.sections[x]._y = this.sections[x].y
+					things_draw[this.sections[x].id].x = this.sections[x].x
+					things_draw[this.sections[x].id].y = this.sections[x].y
+				}
+			}
+						
+			
 			things[name].end = function(){
-				this.owner.hassword = false
-				
 				for(var x in this.sections){
 					delete things_draw[this.sections[x].id]
 					delete things[this.sections[x].id]
@@ -595,6 +664,7 @@ actions = {
 				}
 				
 				delete things_draw[this.id]
+				delete this.owner.weapons['sword']				
 				delete things[this.id]
 				delete this
 			}
@@ -637,37 +707,20 @@ actions = {
 				for(var x in this.sections){ colliding(this.sections[x]) }
 			}
 			
-			things[name].move = function(){
-				this.x = this._x
-				this.y = this._y
-				var offset = 0
-				for(var x in this.sections){
-					offset += this.size
-					this.sections[x].x = this._x + (offset*this.direction.x)
-					this.sections[x].y = this._y + (offset*this.direction.y)
-					this.sections[x]._x = this.sections[x].x
-					this.sections[x]._y = this.sections[x].y
-					things_draw[this.sections[x].id].x = this.sections[x].x
-					things_draw[this.sections[x].id].y = this.sections[x].y
-				}
-			}
-			
 			things[name].step = function(){	 }
 
 			setTimeout(function(){ if(things[name]){ things[name].end()} }, 500)
 		}
 	},	
 	rock: object = {
-		cost: 3,
-		go: function(player, coord){	
-			if(player.hasrock){ 
+		cost: 2,
+		go: function(player, coord){
+			if(player.weapons['rock']){ 
 				//throw rock
-				player.hasrock = false
-				player.rock.thrown = true
-				player.rock.collisions = []
+				player.weapons['rock'].thrown = true
+				player.weapons['rock'].collisions = []
 				return
 			}
-			player.hasrock = true//holding rock
 			var name = player.id + '-' + things_count
 			things_count++
 			things[name] = {}
@@ -694,11 +747,29 @@ actions = {
 			things[name].block = true
 			things[name].collisions = []	
 			
-			player.rock = things[name]
+			player.weapons['rock'] = things[name]
 			things[name].owner = player
 			
+			things[name].move = function(person){
+				this.x = this._x
+				this.y = this._y
+			}
+			
+			things[name].update = function(person){
+				if(this.thrown){ return }
+				things_draw[person.weapons['rock'].id].x = person.weapons['rock'].x
+				things_draw[person.weapons['rock'].id].y = person.weapons['rock'].y			
+				person.weapons['rock']._x = person.weapons['rock'].x
+				person.weapons['rock']._y = person.weapons['rock'].y
+				if(person.up){ person.weapons['rock']._y -= person.speed }
+				else if(person.down){ person.weapons['rock']._y += person.speed }
+				if(person.left){ person.weapons['rock']._x -= person.speed }
+				else if(person.right){ person.weapons['rock']._x += person.speed }
+				colliding(person.weapons['rock'])
+			}
+			
 			things[name].end = function(){
-				if(this.owner.rock == this){ this.owner.hasrock = false }
+				delete player.weapons['rock']
 				delete things_draw[this.id]
 				delete things[this.id]
 				delete this
@@ -706,7 +777,6 @@ actions = {
 			
 			things[name].collide = function(thing){
 				if(thing.name == "portal"){
-					this.owner.hasrock = false
 					this.thrown = true
 					return
 				}
@@ -1478,11 +1548,13 @@ io.on('connection', function(client){
 	P.space = actions['shoot']
 	P.collide = function(thing){  }
 	
+	P.weapons = {}
+	
 	P.end = function(){
 		var hold_id = this.id
 		this.isdead = true	
 		
-		if(this.hasrock){ this.rock.end() }
+		for(var x in this.weapons){ if(this.weapons[x]){ this.weapons[x].end() } }
 		
 		var name = this.id + '-tombstone'
 		things_draw[name] = {}
@@ -1511,42 +1583,11 @@ io.on('connection', function(client){
 		if(this.left){ this._x -= this.speed }
 		else if(this.right){ this._x += this.speed }	
 		
-		if(this.hasrock){
-			things_draw[this.rock.id].x = this.rock.x
-			things_draw[this.rock.id].y = this.rock.y			
-			this.rock._x = this.rock.x
-			this.rock._y = this.rock.y
-			if(this.up){ this.rock._y -= this.speed }
-			else if(this.down){ this.rock._y += this.speed }
-			if(this.left){ this.rock._x -= this.speed }
-			else if(this.right){ this.rock._x += this.speed }
-			colliding(this.rock)
-		}
-		
-		if(this.hassword){
-			things_draw[this.sword.id].x = this.sword.x
-			things_draw[this.sword.id].y = this.sword.y			
-			this.sword._x = this.sword.x
-			this.sword._y = this.sword.y
-			if(this.up){ this.sword._y -= this.speed }
-			else if(this.down){ this.sword._y += this.speed }
-			if(this.left){ this.sword._x -= this.speed }
-			else if(this.right){ this.sword._x += this.speed }
-			this.sword._colliding()
-		}
-		
-		//for x in player.objects: player.objects[x].colliding()
+		update_weapons(this)
 		
 		if(colliding(this)){ return }
 		else{
-			//for x in player.objects: player.objects[x].move()
-			if(this.hasrock){
-				this.rock.x = this.rock._x
-				this.rock.y = this.rock._y
-			}
-			if(this.hassword){
-				this.sword.move()
-			}
+			move_weapons(this)
 			this.x = this._x
 			this.y = this._y
 			return
@@ -1564,13 +1605,6 @@ io.on('connection', function(client){
 	console.log('connected (' + people[client.id].x + ', ' + people[client.id].y + ')')	
 	
 	client.on('disconnect', function(){
-		console.log("disconnected")
-		if(people[client.id].hasrock){
-			people[client.id].rock.end()
-		}
-		if(people[client.id].hassword){
-			people[client.id].sword.end()
-		}
 		delete people[client.id]
 		delete things_draw[client.id]
 		delete things[client.id]
