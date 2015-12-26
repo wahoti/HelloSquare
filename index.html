@@ -1,7 +1,7 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>G</title>
+	<title>Hello Square</title>
 	<link rel="stylesheet" href="style.css">
   
 	<script src="js/socket-io.js"></script>
@@ -10,97 +10,114 @@
   
 </head>
 <body onunload="disconnect()">
-	<h1 id="title">Hello Square</h1>
+	<h1 id="title"></h1>
 	<h1 id="test"></h1>
 	<canvas id="field" width="1000" height="1000" ></canvas>
 	
-	<div align="center">
-		<button type="button" id="m1">
+	<div id="infobox">
+	</div>
+	
+	<div id="divbutton1">
+		<button type="button" id="m1" class="butt">
 			left click
 		</button>
-		<select name="actions" id='_m1'>
-			<option value="shoot" selected="selected">shoot</option>
-			<option value="explode">explode</option>
-			<option value="portal">portal</option>
-			<option value="hulk">hulk</option>
-			<option value="bounce">bounce</option>
-			<option value="invisible">invisible</option>
-			<option value="freeze">freeze</option>
-			<option value="zombie">zombie</option>
-			<option value="rock">rock</option>
-			<option value="sword">sword</option>
-			<option value="sprint">sprint</option>
+		<select name="actions" id='_m1' class='buttt'>
+			<option value="axe">axe</option>
 			<option value="beam">beam</option>
+			<option value="bounce">bounce</option>
+			<option value="explode">explode</option>
+			<option value="freeze">freeze</option>
 			<option value="gatling">gatling</option>
+			<option value="hulk">hulk</option>
+			<option value="invisible">invisible</option>
 			<option value="kamehameha">kamehameha</option>
-			<option value="shield">shield</option>
+			<option value="lazer">lazer</option>			
 			<option value="lion">lion</option>
 			<option value="mine">mine</option>
 			<option value="nuke">nuke</option>
+			<option value="portal">portal</option>
+			<option value="rock">rock</option>
+			<option value="shield">shield</option>			
+			<option value="shoot" selected="selected">shoot</option>
+			<option value="sprint">sprint</option>
+			<option value="sword">sword</option>
+			<option value="zombie">zombie</option>		
 		</select>
 	</div>
 	
-	<div align="center">
+	<div id="divbutton2">
 		<button type="button" id="m2" class="butt">
 			right click
 		</button>
 		<select name="actions" id='_m2' class="buttt">
-			<option value="shoot" selected="selected">shoot</option>
-			<option value="explode">explode</option>
-			<option value="portal">portal</option>
-			<option value="hulk">hulk</option>
-			<option value="bounce">bounce</option>
-			<option value="invisible">invisible</option>
-			<option value="freeze">freeze</option>
-			<option value="zombie">zombie</option>
-			<option value="rock">rock</option>
-			<option value="sword">sword</option>
-			<option value="sprint">sprint</option>
+			<option value="axe">axe</option>
 			<option value="beam">beam</option>
+			<option value="bounce">bounce</option>
+			<option value="explode">explode</option>
+			<option value="freeze">freeze</option>
 			<option value="gatling">gatling</option>
+			<option value="hulk">hulk</option>
+			<option value="invisible">invisible</option>
 			<option value="kamehameha">kamehameha</option>
-			<option value="shield">shield</option>
+			<option value="lazer">lazer</option>			
 			<option value="lion">lion</option>
 			<option value="mine">mine</option>
 			<option value="nuke">nuke</option>
+			<option value="portal">portal</option>
+			<option value="rock">rock</option>
+			<option value="shield">shield</option>			
+			<option value="shoot" selected="selected">shoot</option>
+			<option value="sprint">sprint</option>
+			<option value="sword">sword</option>
+			<option value="zombie">zombie</option>
 		</select>	
 	</div>
 	
-	<div align="center">
+	<div id="divbutton3">
 		<button type="button" id="space" class="butt">
 			space
 		</button>
 		<select name="actions" id='_space' class="buttt">
-			<option value="shoot" selected="selected">shoot</option>
-			<option value="explode">explode</option>
-			<option value="portal">portal</option>
-			<option value="hulk">hulk</option>
-			<option value="bounce">bounce</option>
-			<option value="invisible">invisible</option>
-			<option value="freeze">freeze</option>
-			<option value="zombie">zombie</option>
-			<option value="rock">rock</option>
-			<option value="sword">sword</option>
-			<option value="sprint">sprint</option>
+			<option value="axe">axe</option>
 			<option value="beam">beam</option>
+			<option value="bounce">bounce</option>
+			<option value="explode">explode</option>
+			<option value="freeze">freeze</option>
 			<option value="gatling">gatling</option>
+			<option value="hulk">hulk</option>
+			<option value="invisible">invisible</option>
 			<option value="kamehameha">kamehameha</option>
-			<option value="shield">shield</option>
+			<option value="lazer">lazer</option>			
 			<option value="lion">lion</option>
 			<option value="mine">mine</option>
 			<option value="nuke">nuke</option>
+			<option value="portal">portal</option>
+			<option value="rock">rock</option>
+			<option value="shield">shield</option>			
+			<option value="shoot" selected="selected">shoot</option>
+			<option value="sprint">sprint</option>
+			<option value="sword">sword</option>
+			<option value="zombie">zombie</option>
 		</select>	
 	</div>	
 	
 	<script>
+		//document.body.style.zoom="50%"
+	
 		var canvas = document.getElementById("field")
 		var ctx = canvas.getContext("2d")
 		var person = {}
-		
+		var id
 		var things = {}
 		
 		var socket = io()
-		socket.on('init', function(person){ person = person })	
+		socket.on('init', function(person){ 
+			person = person
+			id = person.id
+		})	
+		
+		
+		
 		socket.on('draw', function(things){ //things = _things })
 		//function draw(){
 			//setTimeout(function(){
@@ -113,6 +130,12 @@
 					ctx.fillRect(things[x].x - _size,things[x].y - _size,size,size)		
 					
 					if(things[x].isperson){
+						if(x == id){
+							ctx.beginPath()
+							ctx.rect(things[x].x - __size - 5, things[x].y - __size - 5, things[x].size + 5, things[x].size + 5)
+							ctx.stroke()
+							ctx.closePath()
+						}
 						if(things[x].invisible){ 
 							console.log('test')
 							continue }

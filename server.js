@@ -1,4 +1,5 @@
 //ABDULWAHED WAHEDI
+{//notes
 
 //IDEAS
 //walls, turrets, blink, energy boost ability, shield boost, hulk abilities, shotgun, bouncey gun, grenade, c4
@@ -85,6 +86,20 @@
 //added player.weapons object
 //id of weapon is player.weapons('WEAPON_NAME')
 
+//12/15/15 CHANGES
+//added lazer
+//added a rotation mechanic :)
+
+//12/25/15 CHANGES
+//mostly visual - added a square around the current player to differentiate the player
+//moved the abiity buttons to the top right corner and gave them a bigger font
+//made the abilities in alphabetical order
+//added a background image
+//IDEA - fork hellosquare into the same game but with a bigger map that uses hellocircle map mechanics
+//			plus smaller screen (no zooming mess)
+
+}
+
 {//variables
 var victor = require('victor')
 var app  = require("express")()
@@ -101,15 +116,15 @@ var height = 1000
 
 var boxs = {}
 boxs['box1'] = {}
-boxs['box1'].size = 250
-boxs['box1'].x = 500
-boxs['box1'].y = 500
+boxs['box1'].size = width/4
+boxs['box1'].x = width/2
+boxs['box1'].y = height/2
 boxs['box1'].ishole = false
 
 things_draw['box1'] = {}
-things_draw['box1'].x = 500
-things_draw['box1'].y = 500
-things_draw['box1'].size = 250
+things_draw['box1'].x = width/2
+things_draw['box1'].y = height/2
+things_draw['box1'].size = width/4
 things_draw['box1'].color = '#000000'
 
 	
@@ -118,6 +133,8 @@ app.get('/', function(req, res){ res.sendFile(__dirname + '/index.html') })
 app.get('/style.css', function(req, res){ res.sendFile(__dirname + '/style.css') })
 app.get('/js/socket-io.js', function(req, res){ res.sendFile(__dirname + '/js/socket-io.js') })
 app.get('/js/keys.js', function(req, res){ res.sendFile(__dirname + '/js/keys.js') })
+app.get('/js/symphony.png', function(req, res){ res.sendFile(__dirname + '/js/symphony.png') })
+
 
 http.listen(app.get('port'), function(){ console.log('listening on ' + app.get('port') + '...') })
 }
@@ -330,12 +347,12 @@ function person_spawn(person_id){
 	person.isdead = false
 	delete things_draw[person.id + '-tombstone']
 }
-}
 var update_interval = setInterval(function(){ for(var x in things){ things[x].step() } }, 8)
 var draw_interval = setInterval(function(){ io.sockets.emit('draw', things_draw) }, 16)
 var energy_interval = setInterval(function(){ for(var x in people){ if(people[x].energy < 10){ people[x].energy++ } } }, 1000) 
-
-actions = {
+}
+	
+actions = {//abilities
 	kamehameha: object = {
 		cost: 3,
 		go: function(player, coord){	
@@ -654,8 +671,7 @@ actions = {
 					things_draw[this.sections[x].id].y = this.sections[x].y
 				}
 			}
-						
-			
+								
 			things[name].end = function(){
 				for(var x in this.sections){
 					delete things_draw[this.sections[x].id]
@@ -1525,11 +1541,348 @@ actions = {
 				}
 			}
 		}
-	}
+	},
+	lazer: object = {
+		cost: 5,
+		go: function(player, coord){
+			if(player.weapons['lazer']){ player.weapons['lazer'].end() }
+			var name = player.id + '-lazer-' + things_count
+			things_count++
+			things[name] = {}
+			things_draw[name] = {}
+			things[name].id = name
+			things[name].speed = 0
+			things[name].name = 'lazer'
+			things_draw[name].color = "#FF0000"
+			things[name].size = 0
+			things[name].damage = 100
+			things_draw[name].size = things[name].size
+			things[name].isperson = false
+			things_draw[name].isperson = false
+			things[name].iszombie = false
+			var direction = new victor(coord[0] - player.x, coord[1] - player.y)
+			direction.normalize()
+			things[name].direction = direction
+			things[name].x = player.x + (50*direction.x)
+			things[name].y = player.y + (50*direction.y)
+			things_draw[name].x = things[name].x
+			things_draw[name].y = things[name].y				
+			things[name].destroy_on_wall = false	
+			things[name].block = true
+			things[name].counter = 0
+			things[name].collisions = []
+			things[name].activated = false
+			
+			//do sections
+			things[name].sections = {}
+			var length = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
+			var offset = 200
+			for(var x in length){
+				var _name =  things[name].id + '_' + x
+				things[_name] = {}
+				things[_name].id = _name
+				things[_name].name = 'lazer'
+				things[_name].speed = 0
+				things[_name].direction = things[name].direction
+				things[_name].block = true
+				things[_name].size = things[name].size
+				offset += 100
+				things[_name].x = player.x + (offset*direction.x)
+				things[_name].y = player.y + (offset*direction.y)
+				things[_name].collide = function(thing){
+					if(thing.name == "portal"){ return }
+					if(things[name].collisions.indexOf(thing.id) > -1){ return }				
+					if(thing.isperson || thing.iszombie){ hit(thing, things[name].damage) }	
+					things[name].collisions.push(thing.id)					
+					return
+				}
+				things[_name].end = function(){}
+				things[_name].step = function(){}
+				
+				things_draw[_name] = {}
+				things_draw[_name].x = things[_name].x
+				things_draw[_name].y = things[_name].y
+				things_draw[_name].color = things_draw[name].color
+				things_draw[_name].size = 3
+				
+				things[name].sections[_name] = things[_name]
+			}
+			
+			player.weapons['lazer'] = things[name]
+			things[name].owner = player
+			
+			things[name].update = function(person){
+				if(this.activated){
+					for(var x in person.weapons['lazer'].sections){
+						person.weapons['lazer'].sections[x].size += 1
+						things_draw[person.weapons['lazer'].sections[x].id].size += 1
+					}
+				}
+				
+				things_draw[person.weapons['lazer'].id].x = person.weapons['lazer'].x
+				things_draw[person.weapons['lazer'].id].y = person.weapons['lazer'].y			
+				person.weapons['lazer']._x = person.weapons['lazer'].x
+				person.weapons['lazer']._y = person.weapons['lazer'].y
+				if(person.up){ person.weapons['lazer']._y -= person.speed }
+				else if(person.down){ person.weapons['lazer']._y += person.speed }
+				if(person.left){ person.weapons['lazer']._x -= person.speed }
+				else if(person.right){ person.weapons['lazer']._x += person.speed }
+				person.weapons['lazer']._colliding()				
+			}
+			
+			things[name].move = function(person){
+				this.x = this._x
+				this.y = this._y
+				var offset = 0
+				for(var x in this.sections){
+					offset += 50
+					this.sections[x].x = this._x + (offset*this.direction.x)
+					this.sections[x].y = this._y + (offset*this.direction.y)
+					this.sections[x]._x = this.sections[x].x
+					this.sections[x]._y = this.sections[x].y
+					things_draw[this.sections[x].id].x = this.sections[x].x
+					things_draw[this.sections[x].id].y = this.sections[x].y
+				}
+			}
+								
+			things[name].end = function(){
+				for(var x in this.sections){
+					delete things_draw[this.sections[x].id]
+					delete things[this.sections[x].id]
+					delete this.sections[x]
+				}
+				
+				delete things_draw[this.id]
+				delete this.owner.weapons['lazer']				
+				delete things[this.id]
+				delete this
+			}
+			
+			things[name].swing = function(coord){
+				var direction = new victor(coord[0] - player.x, coord[1] - player.y)
+				direction.normalize()
+				this.direction = direction
+				this.x = player.x + (20*direction.x)
+				this.y = player.y + (20*direction.y)
+				things_draw[this.id].x = this.x
+				things_draw[this.id].y = this.y	
+				
+				var offset = 0
+				for(var x in this.sections){
+					offset += this.size
+					this.sections[x].x = player.x + (offset*this.direction.x)
+					this.sections[x].y = player.y + (offset*this.direction.y)
+				}				
+			}
+			
+			things[name].collide = function(thing){								
+				if(thing.name == "portal"){ return }
+				if(thing.block){ return }				
+				if(things[name].collisions.indexOf(thing.id) > -1){ return }				
+				if(thing.isperson || thing.iszombie){ hit(thing, things[name].damage) }	
+				things[name].collisions.push(thing.id)
+				return
+			}
+
+			things[name]._colliding = function(){
+				for(var x in this.sections){ colliding(this.sections[x]) }
+			}
+			
+			things[name].step = function(){	 }
+
+			setTimeout(function(){
+				if(things[name]){
+					things_draw[name].color = "#FF3399"
+					things[name].activated = true
+				}
+			}, 1000)		
+			setTimeout(function(){
+				if(things[name]){
+					things[name].end()
+				}
+			}, 1500)
+		}
+	},
+	axe: object = {
+		cost: 1,
+		go: function(player, coord){	
+			if(player.weapons['axe']){
+				player.weapons['axe'].rspeed = (player.weapons['axe'].rspeed * -1)
+				return
+			}
+			else{
+			{//init
+			var name = player.id + '-' + things_count
+			things_count++
+			things[name] = {}
+			things_draw[name] = {}
+			things[name].id = name
+			things[name].speed = 0
+			things[name].name = 'axe'
+			things_draw[name].color = "#000000"
+			things[name].dsize = 0
+			things[name]._size = 25
+			things[name].damage = 30
+			things_draw[name].size = things[name].size
+			things[name].isperson = false
+			things_draw[name].isperson = false
+			things[name].iszombie = false
+			var direction = new victor(coord[0] - player.x, coord[1] - player.y)
+			direction.normalize()
+			things[name].direction = direction
+			things[name].x = player.x + (25*direction.x)
+			things[name].y = player.y + (25*direction.y)
+			things_draw[name].x = things[name].x
+			things_draw[name].y = things[name].y				
+			things[name].destroy_on_wall = false	
+			things[name].block = true
+			things[name].counter = 0
+			things[name].collisions = []
+			things[name].rspeed = .01
+			}
+			
+			//do sections
+			things[name].sections = {}
+			var length = [0,1,2,3,4,5]
+			var offset = 15
+			for(var x in length){
+				var _name =  things[name].id + '_' + x
+				things[_name] = {}
+				things[_name].id = _name
+				things[_name].name = 'axe'
+				things[_name].speed = 0
+				things[_name].direction = things[name].direction
+				things[_name].block = true
+				things[_name].size = things[name]._size
+				offset += things[_name]._size
+				things[_name].x = player.x + (offset*direction.x)
+				things[_name].y = player.y + (offset*direction.y)
+				things[_name].collide = function(thing){
+					if(thing.name == "portal"){
+						this.end()
+						return
+					}
+					if(things[name].collisions.indexOf(thing.id) > -1){ return }				
+					if(thing.isperson || thing.iszombie){ hit(thing, things[name].damage) }	
+					things[name].collisions.push(thing.id)					
+					return
+				}
+				things[_name].end = function(){}
+				things[_name].step = function(){}
+				
+				things_draw[_name] = {}
+				things_draw[_name].x = things[_name].x
+				things_draw[_name].y = things[_name].y
+				things_draw[_name].color = things_draw[name].color
+				things_draw[_name].size = things[_name].size
+				
+				things[name].sections[_name] = things[_name]
+			}
+			
+			player.weapons['axe'] = things[name]
+			things[name].owner = player
+			
+			things[name].update = function(person){
+				this.direction.rotate(person.weapons['axe'].rspeed).normalize()
 	
+				var offset = 20
+				for(var x in this.sections){
+					offset += this._size
+					this.sections[x]._x = person.x + (offset*this.direction.x)
+					this.sections[x]._y = person.y + (offset*this.direction.y)
+				}
+				
+				// person.weapons['axe']._x = person.weapons['axe'].x
+				// person.weapons['axe']._y = person.weapons['axe'].y
+				// if(person.up){ person.weapons['axe']._y -= person.speed }
+				// else if(person.down){ person.weapons['axe']._y += person.speed }
+				// if(person.left){ person.weapons['axe']._x -= person.speed }
+				// else if(person.right){ person.weapons['axe']._x += person.speed }
+				person.weapons['axe']._colliding()				
+			}
+			
+			things[name].move = function(person){
+				// this.x = person._x + (50*this.direction.x)
+				// this.y = this._y
+				// var offset = 0
+				// for(var x in this.sections){
+					// offset += this.size
+					// this.sections[x].x = person._x + (offset*this.direction.x)
+					// this.sections[x].y = person._y + (offset*this.direction.y)
+					// this.sections[x]._x = this.sections[x].x
+					// this.sections[x]._y = this.sections[x].y
+					// things_draw[this.sections[x].id].x = this.sections[x].x
+					// things_draw[this.sections[x].id].y = this.sections[x].y
+				// }
+				for(var x in this.sections){
+					this.sections[x].x = this.sections[x]._x
+					this.sections[x].y = this.sections[x]._y
+					things_draw[this.sections[x].id].x = this.sections[x].x
+					things_draw[this.sections[x].id].y = this.sections[x].y
+					
+				}
+			}
+								
+			things[name].end = function(){
+				for(var x in this.sections){
+					delete things_draw[this.sections[x].id]
+					delete things[this.sections[x].id]
+					delete this.sections[x]
+				}
+				
+				delete things_draw[this.id]
+				delete this.owner.weapons['axe']				
+				delete things[this.id]
+				delete this
+			}
+			
+			things[name].swing = function(coord){
+				var direction = new victor(coord[0] - player.x, coord[1] - player.y)
+				direction.normalize()
+				this.direction = direction
+				this.x = player.x + (20*direction.x)
+				this.y = player.y + (20*direction.y)
+				things_draw[this.id].x = this.x
+				things_draw[this.id].y = this.y	
+				
+				var offset = 0
+				for(var x in this.sections){
+					offset += this.size
+					this.sections[x].x = player.x + (offset*this.direction.x)
+					this.sections[x].y = player.y + (offset*this.direction.y)
+				}				
+			}
+			
+			things[name].collide = function(thing){								
+				if(thing.name == "portal"){
+					this.end()
+					return
+				}
+				if(thing.block){
+					console.log('?')
+					this.end()
+					return
+				}				
+				if(things[name].collisions.indexOf(thing.id) > -1){ return }				
+				if(thing.isperson || thing.iszombie){ hit(thing, things[name].damage) }	
+				things[name].collisions.push(thing.id)
+				return
+			}
+
+			things[name]._colliding = function(){
+				//colliding(this)
+				for(var x in this.sections){ colliding(this.sections[x]) }
+			}
+			
+			things[name].step = function(){	 }
+
+			setTimeout(function(){ if(things[name]){ things[name].end()} }, 3000)
+		}
+		}
+	}		
 }
 
-io.on('connection', function(client){
+io.on('connection', function(client){//socket io
 	people[client.id] = {}
 	var P = people[client.id]
 	P.id = client.id

@@ -1,10 +1,12 @@
 html,
 body {
-  font: 16px/1.2 "Helvetica Neue", Helvetica, arial, sans-serif;
-  color: #444;
+  font: 32px/1.2 "Helvetica Neue", Helvetica, arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-smoothing: antialiased;
   font-weight: 300;
+  background-image: url("js/symphony.png");
+  background-repeat: repeat;
+  display: block;
 }
 
 h1#title{
@@ -20,10 +22,56 @@ h1#test{
 }
 
 canvas#field {
+	background-color: #FFF;
 	display: block;
 	margin: 0px auto;
 	border:1px solid #000000;
 }
+
+.butt{
+	font-size: 100%;
+}
+
+.buttt{
+	font-size: 100%;
+}
+
+div#divbutton1 {
+	width: 10%;
+	position: fixed;
+	top: 0;
+	right: 0;
+}
+
+div#divbutton2 {
+	width: 10%;
+	position: fixed;
+	top: 10%;
+	right: 0;
+}
+
+div#divbutton3 {
+	width: 10%;
+	position: fixed;
+	top: 20%;
+	right: 0;
+}
+
+.text{
+	font-size: 50%;
+}
+
+div#infobox{
+	width: 30%;
+	position: fixed;
+	top: 0;
+	left: 0;	
+}
+
+button {
+	
+}
+
 
 .filler{
 	height: 100px;
