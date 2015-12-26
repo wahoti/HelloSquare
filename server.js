@@ -1897,8 +1897,8 @@ io.on('connection', function(client){//socket io
 	P.right = false
 	P.color = "#000000"
 	P.m1 = actions['shoot']
-	P.m2 = actions['shoot']
-	P.space = actions['shoot']
+	P.m2 = actions['sword']
+	P.space = actions['sprint']
 	P.collide = function(thing){  }
 	
 	P.weapons = {}
