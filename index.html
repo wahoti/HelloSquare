@@ -130,6 +130,7 @@
 					ctx.fillRect(things[x].x - _size,things[x].y - _size,size,size)		
 					
 					if(things[x].isperson){
+						__size = _size/2
 						if(x == id){
 							ctx.beginPath()
 							ctx.rect(things[x].x - __size - 5, things[x].y - __size - 5, things[x].size + 5, things[x].size + 5)
@@ -139,7 +140,6 @@
 						if(things[x].invisible){ 
 							console.log('test')
 							continue }
-						__size = _size/2
 						if(things[x].energy > 6){
 							ctx.fillStyle="#00FF00"
 							ctx.fillRect(things[x].x - __size,things[x].y - __size,_size,_size)
