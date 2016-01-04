@@ -62,6 +62,7 @@ div#divbutton3 {
 }
 
 div#infobox{
+	font-size: 30%;
 	width: 30%;
 	position: fixed;
 	top: 0;
