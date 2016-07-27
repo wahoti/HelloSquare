@@ -3,21 +3,21 @@
 	<meta charset="utf-8">
 	<title>Hello Square</title>
 	<link rel="stylesheet" href="style.css">
-  
+
 	<script src="js/socket-io.js"></script>
 	<script src="js/keys.js"></script>
-	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>	
-  
+	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+
 </head>
 <body onunload="disconnect()">
 	<h1 id="title"></h1>
 	<h1 id="test"></h1>
 	<canvas id="field" width="1000" height="1000" ></canvas>
-	
+
 	<div id="infobox">
 		<p>press 'h' for help</p>
 	</div>
-	
+
 	<div id="divbutton1">
 		<button type="button" id="m1" class="butt">
 			left click
@@ -32,20 +32,20 @@
 			<option value="hulk">hulk</option>
 			<option value="invisible">invisible</option>
 			<option value="kamehameha">kamehameha</option>
-			<option value="lazer">lazer</option>			
+			<option value="lazer">lazer</option>
 			<option value="lion">lion</option>
 			<option value="mine">mine</option>
 			<option value="nuke">nuke</option>
 			<option value="portal">portal</option>
 			<option value="rock">rock</option>
-			<option value="shield">shield</option>			
+			<option value="shield">shield</option>
 			<option value="shoot" selected="selected">shoot</option>
 			<option value="sprint">sprint</option>
 			<option value="sword">sword</option>
-			<option value="zombie">zombie</option>		
+			<option value="zombie">zombie</option>
 		</select>
 	</div>
-	
+
 	<div id="divbutton2">
 		<button type="button" id="m2" class="butt">
 			right click
@@ -60,20 +60,20 @@
 			<option value="hulk">hulk</option>
 			<option value="invisible">invisible</option>
 			<option value="kamehameha">kamehameha</option>
-			<option value="lazer">lazer</option>			
+			<option value="lazer">lazer</option>
 			<option value="lion">lion</option>
 			<option value="mine">mine</option>
 			<option value="nuke">nuke</option>
 			<option value="portal">portal</option>
 			<option value="rock">rock</option>
-			<option value="shield">shield</option>			
+			<option value="shield">shield</option>
 			<option value="shoot">shoot</option>
 			<option value="sprint">sprint</option>
 			<option value="sword" selected="selected">sword</option>
 			<option value="zombie">zombie</option>
-		</select>	
+		</select>
 	</div>
-	
+
 	<div id="divbutton3">
 		<button type="button" id="space" class="butt">
 			space
@@ -88,57 +88,65 @@
 			<option value="hulk">hulk</option>
 			<option value="invisible">invisible</option>
 			<option value="kamehameha">kamehameha</option>
-			<option value="lazer">lazer</option>			
+			<option value="lazer">lazer</option>
 			<option value="lion">lion</option>
 			<option value="mine">mine</option>
 			<option value="nuke">nuke</option>
 			<option value="portal">portal</option>
 			<option value="rock">rock</option>
-			<option value="shield">shield</option>			
+			<option value="shield">shield</option>
 			<option value="shoot">shoot</option>
 			<option value="sprint" selected="selected">sprint</option>
 			<option value="sword">sword</option>
 			<option value="zombie">zombie</option>
-		</select>	
-	</div>	
-	
+		</select>
+	</div>
+
 	<script>
 		//document.body.style.zoom="50%"
-	
+
 		var canvas = document.getElementById("field")
 		var ctx = canvas.getContext("2d")
 		var person = {}
 		var id
 		var things = {}
-		
+
 		var socket = io()
-		socket.on('init', function(person){ 
+		socket.on('init', function(person){
 			person = person
 			id = person.id
-		})	
-		
-		
-		
+		})
+
+		// myname
+		// var myname = "AW"
+		// cheat = function(){
+		// 	socket.emit()
+		// }
+
+		stressTest = function(){ socket.emit('stressTest') }
+
+
 		socket.on('draw', function(things){ //things = _things })
 		//function draw(){
 			//setTimeout(function(){
-				//requestAnimationFrame(draw)	
+				//requestAnimationFrame(draw)
 				ctx.clearRect(0, 0, 1000, 1000)
-				for(var x in things){	
+				for(var x in things){
 					size = things[x].size
 					_size = things[x].size/2
 					ctx.fillStyle = things[x].color
-					ctx.fillRect(things[x].x - _size,things[x].y - _size,size,size)		
-					
+					ctx.fillRect(things[x].x - _size,things[x].y - _size,size,size)
+
 					if(things[x].isperson){
 						__size = _size/2
+						// ctx.fillText(myname,things[x].x,things[x].y-_size);
 						if(x == id){
 							ctx.beginPath()
 							ctx.rect(things[x].x - __size - 5, things[x].y - __size - 5, things[x].size + 5, things[x].size + 5)
 							ctx.stroke()
 							ctx.closePath()
 						}
-						if(things[x].invisible){ 
+						if(things[x].invisible){
 							console.log('test')
 							continue }
 						if(things[x].energy > 6){
@@ -150,18 +158,18 @@
 							ctx.fillStyle="#FFFF00"
 							ctx.fillRect(things[x].x - __size,things[x].y - __size,_size,_size)
 							continue
-						}						
+						}
 						if(things[x].energy > 0){
 							ctx.fillStyle="#FF0000"
 							ctx.fillRect(things[x].x - __size,things[x].y - __size,_size,_size)
 							continue
-						}	
+						}
 					}
 				}
-			//}, 1000/60)	
+			//}, 1000/60)
 		})
 		//draw()
-		
+
 		//keys
 		document.addEventListener("keydown", keydown, false)
 		document.addEventListener("keyup", keyup, false)
@@ -171,11 +179,11 @@
 		document.addEventListener("keyup", function(){
 			socket.emit('keys', up, down, left, right)
 		}, false)
-		
-		//mouse		
+
+		//mouse
 		var mx = 0
-		var my = 0		
-        document.addEventListener('contextmenu', function(c) { c.preventDefault() }, false)	
+		var my = 0
+        document.addEventListener('contextmenu', function(c) { c.preventDefault() }, false)
 		canvas.addEventListener("mousedown", function(c){
 			coord = [(c.clientX - canvas.offsetLeft), (c.clientY - canvas.offsetTop)]
 			if(c.which == 1){ socket.emit('action', 'left', coord)}
@@ -193,18 +201,18 @@
 		m1butt.onclick = function(){
 			socket.emit('change',_m1butt.options[_m1butt.selectedIndex].value,'left')
 		}
-		
+
 		var m2butt = document.getElementById('m2')
 		var _m2butt = document.getElementById('_m2')
 		m2butt.onclick = function(){
 			socket.emit('change',_m2butt.options[_m2butt.selectedIndex].value,'right')
 		}
-		
+
 		var space = document.getElementById('space')
 		var _space = document.getElementById('_space')
 		space.onclick = function(){
 			socket.emit('change',_space.options[_space.selectedIndex].value,'space')
-		}			
+		}
 	</script>
 
 </body>
